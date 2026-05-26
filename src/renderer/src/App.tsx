@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles, Eye, LayoutTemplate } from 'lucide-react'
+import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles, Eye, LayoutTemplate, BookOpen } from 'lucide-react'
 import CodeEditor from './components/CodeEditor'
 import BuildConfigPanel from './components/BuildConfig'
 import BuildProgress from './components/BuildProgress'
@@ -8,10 +8,12 @@ import BuildHistory from './components/BuildHistory'
 import AIAssistant from './components/AIAssistant'
 import UpdateBanner, { useUpdater } from './components/UpdateBanner'
 import TemplateModal from './components/TemplateModal'
+import TutorialPanel from './components/TutorialPanel'
+import WelcomeTour from './components/WelcomeTour'
 import ThemeSwitcher, { type Theme } from './components/ThemeSwitcher'
 import type { BuildConfig, LogEntry, BuildOutputPaths, ToolStatus, BuildHistoryEntry } from './types'
 
-type Tab = 'editor' | 'log' | 'history' | 'ai'
+type Tab = 'editor' | 'log' | 'history' | 'ai' | 'guide'
 
 let logIdCounter = 0
 let historyIdCounter = 0
@@ -41,6 +43,9 @@ export default function App() {
   const buildStartRef = useRef<number>(0)
   const updater = useUpdater()
   const [showTemplates, setShowTemplates] = useState(false)
+  const [showTour, setShowTour] = useState(
+    () => !localStorage.getItem('cf-tour-done')
+  )
 
   const hasHtmlFiles = Object.keys(files).some((f) => f.endsWith('.html'))
 
@@ -304,6 +309,12 @@ export default function App() {
               icon={<Sparkles className="w-3.5 h-3.5" />}
               label="AI"
             />
+            <TabButton
+              active={activeTab === 'guide'}
+              onClick={() => setActiveTab('guide')}
+              icon={<BookOpen className="w-3.5 h-3.5" />}
+              label="Guide"
+            />
           </div>
 
           {/* Pane content */}
@@ -328,8 +339,21 @@ export default function App() {
                 onApplyConfig={(partial) => setConfig((prev) => ({ ...prev, ...partial }))}
               />
             )}
+            {activeTab === 'guide' && (
+              <TutorialPanel onStartTour={() => setShowTour(true)} />
+            )}
           </div>
         </div>
+
+        {/* Welcome tour */}
+        {showTour && (
+          <WelcomeTour
+            onClose={() => {
+              localStorage.setItem('cf-tour-done', '1')
+              setShowTour(false)
+            }}
+          />
+        )}
 
         {/* Template modal */}
         {showTemplates && (
