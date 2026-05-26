@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeForge — Turn Source Code Into Real Apps</title>
+  <meta name="description" content="CodeForge is a desktop app that compiles HTML, Python, and Node.js source code into downloadable Windows EXE and Android APK files — no build tools required." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔨</text></svg>" />
+</head>
+<body>
+
+  <!-- ── NAV ── -->
+  <nav id="nav">
+    <div class="nav-inner">
+      <a href="#" class="brand">🔨 CodeForge</a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How It Works</a>
+        <a href="#templates">Templates</a>
+        <a href="#download" class="btn-nav">Download Free →</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+      <div class="grid-lines"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="badge animate-fade-up">✨ Now with AI Build Assistant</div>
+      <h1 class="animate-fade-up delay-1">
+        Turn your code into<br/>
+        <span class="gradient-text">real apps.</span>
+      </h1>
+      <p class="hero-sub animate-fade-up delay-2">
+        CodeForge compiles HTML/JS, Python, and Node.js projects into
+        distributable <strong>Windows EXE</strong> and <strong>Android APK</strong> files
+        — right from your desktop. No terminal. No config files. No BS.
+      </p>
+      <div class="hero-btns animate-fade-up delay-3">
+        <a href="#download" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download for Windows
+        </a>
+        <a href="https://github.com/crazyhorse217/Code-Forge" target="_blank" class="btn-ghost">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <!-- Floating code window mockup -->
+      <div class="mockup animate-fade-up delay-4">
+        <div class="mockup-bar">
+          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+          <span class="mockup-title">index.html — CodeForge</span>
+        </div>
+        <div class="mockup-body">
+          <div class="code-line"><span class="c-tag">&lt;!DOCTYPE</span> <span class="c-attr">html</span><span class="c-tag">&gt;</span></div>
+          <div class="code-line"><span class="c-tag">&lt;html</span> <span class="c-attr">lang</span>=<span class="c-str">"en"</span><span class="c-tag">&gt;</span></div>
+          <div class="code-line indent"><span class="c-tag">&lt;head&gt;</span></div>
+          <div class="code-line indent2"><span class="c-tag">&lt;title&gt;</span><span class="c-text">My Awesome App</span><span class="c-tag">&lt;/title&gt;</span></div>
+          <div class="code-line indent"><span class="c-tag">&lt;/head&gt;</span></div>
+          <div class="code-line indent"><span class="c-tag">&lt;body&gt;</span></div>
+          <div class="code-line indent2"><span class="c-tag">&lt;h1&gt;</span><span class="c-text">Hello World! 🚀</span><span class="c-tag">&lt;/h1&gt;</span></div>
+          <div class="code-line indent"><span class="c-tag">&lt;/body&gt;</span></div>
+          <div class="code-line"><span class="c-tag">&lt;/html&gt;</span></div>
+          <div class="code-line build-line">
+            <span class="build-badge">✓ Build complete</span>
+            <span class="build-output">→ MyAwesomeApp.exe (45 MB)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ── -->
+  <section class="features" id="features">
+    <div class="section-inner">
+      <div class="section-label">Features</div>
+      <h2>Everything you need to ship.</h2>
+      <p class="section-sub">From writing code to handing someone a working app — CodeForge handles it all.</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feat-icon">🤖</div>
+          <h3>AI Build Assistant</h3>
+          <p>Claude analyzes your code, flags issues before they fail, and fixes build errors with a single click.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">👁️</div>
+          <h3>Live Preview</h3>
+          <p>Preview your HTML app in a sandboxed window instantly — no build required. See changes as you write.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">📦</div>
+          <h3>Multi-target Builds</h3>
+          <p>Output Windows EXE, Android APK, or both at once. One project, all platforms.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">📋</div>
+          <h3>Starter Templates</h3>
+          <p>6 fully-written starter projects — Web App, Calculator, Landing Page, Python CLI, GUI, and Node.js API.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">🎨</div>
+          <h3>Beautiful Interface</h3>
+          <p>Dark, light, or custom photo background. Monaco editor with full syntax highlighting and keyboard shortcuts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">🔄</div>
+          <h3>Auto-Updates</h3>
+          <p>CodeForge updates itself silently in the background. Always on the latest version, zero effort.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">💾</div>
+          <h3>Project Save & Load</h3>
+          <p>Save your entire project as a .codeforge file and reload it anytime. Build history persists per session.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">🗂️</div>
+          <h3>ZIP Import</h3>
+          <p>Drag and drop a ZIP archive straight onto the editor to import an entire project in one go.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── -->
+  <section class="how" id="how">
+    <div class="section-inner">
+      <div class="section-label">How It Works</div>
+      <h2>Three steps to a real app.</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-body">
+            <h3>Write or import your code</h3>
+            <p>Type in the Monaco editor, drag a ZIP file, or load one of the 6 built-in starter templates. HTML/JS, Python, and Node.js all supported out of the box.</p>
+          </div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-body">
+            <h3>Configure and build</h3>
+            <p>Set your app name, version, and target platform. Click Build Now. Watch real-time progress in the log. The AI assistant is there if anything goes wrong.</p>
+          </div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-body">
+            <h3>Download and share</h3>
+            <p>Your EXE or APK is ready to distribute. Save it anywhere. Run it on any Windows machine or Android device — no runtime or installation needed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TEMPLATES ── -->
+  <section class="templates-sec" id="templates">
+    <div class="section-inner">
+      <div class="section-label">Templates</div>
+      <h2>Start with a working project.</h2>
+      <p class="section-sub">Every template is fully written and ready to build in one click.</p>
+      <div class="template-grid">
+        <div class="tmpl-card"><span class="tmpl-emoji">🌐</span><span class="tmpl-name">Web App</span><span class="tmpl-lang html">HTML</span></div>
+        <div class="tmpl-card"><span class="tmpl-emoji">🧮</span><span class="tmpl-name">Calculator</span><span class="tmpl-lang html">HTML</span></div>
+        <div class="tmpl-card"><span class="tmpl-emoji">🚀</span><span class="tmpl-name">Landing Page</span><span class="tmpl-lang html">HTML</span></div>
+        <div class="tmpl-card"><span class="tmpl-emoji">🐍</span><span class="tmpl-name">Python CLI</span><span class="tmpl-lang python">Python</span></div>
+        <div class="tmpl-card"><span class="tmpl-emoji">🖥️</span><span class="tmpl-name">Python GUI</span><span class="tmpl-lang python">Python</span></div>
+        <div class="tmpl-card"><span class="tmpl-emoji">⚙️</span><span class="tmpl-name">Node.js API</span><span class="tmpl-lang node">Node.js</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DOWNLOAD ── -->
+  <section class="download" id="download">
+    <div class="section-inner">
+      <div class="dl-card">
+        <div class="dl-icon">🔨</div>
+        <h2>CodeForge</h2>
+        <p>Free. Open source. No sign-up required.</p>
+        <a href="https://github.com/crazyhorse217/Code-Forge/releases/latest" class="btn-primary btn-large" target="_blank">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download for Windows
+        </a>
+        <div class="dl-meta">
+          Windows 10/11 · 64-bit · Free forever
+        </div>
+        <a href="https://github.com/crazyhorse217/Code-Forge" target="_blank" class="dl-github">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          View source on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="footer-inner">
+      <span class="brand">🔨 CodeForge</span>
+      <span>Built with Electron, React &amp; Claude · Open Source</span>
+      <a href="https://github.com/crazyhorse217/Code-Forge" target="_blank">GitHub</a>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

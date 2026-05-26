@@ -318,7 +318,7 @@ export default function App() {
           </div>
 
           {/* Pane content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden cf-tab-content" key={activeTab}>
             {activeTab === 'editor' && (
               <CodeEditor
                 files={files}

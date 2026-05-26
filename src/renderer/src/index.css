@@ -117,3 +117,80 @@ body,
 /* Keep text legible */
 [data-theme="photo"] .text-slate-600 { color: #94a3b8 !important; }
 [data-theme="photo"] .text-slate-700 { color: #94a3b8 !important; }
+
+/* ════════════════════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════════════════════ */
+
+/* Tab content fade + slide in */
+@keyframes cf-tab-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cf-tab-content {
+  animation: cf-tab-in 0.18s ease-out both;
+}
+
+/* Log entry slide in from left */
+@keyframes cf-log-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.cf-log-entry {
+  animation: cf-log-in 0.15s ease-out both;
+}
+
+/* Modal slide up */
+@keyframes cf-modal-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.cf-modal {
+  animation: cf-modal-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Tour slide between steps */
+@keyframes cf-slide-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.cf-slide-in {
+  animation: cf-slide-in 0.2s ease-out both;
+}
+
+/* Violet pulse ring — used on active build dot */
+@keyframes cf-ring-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(251,191,36,0.7); }
+  70%  { box-shadow: 0 0 0 8px rgba(251,191,36,0); }
+  100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+}
+.cf-pulse-ring {
+  animation: cf-ring-pulse 1.2s ease-out infinite;
+}
+
+/* Success burst */
+@keyframes cf-pop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.cf-pop {
+  animation: cf-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Shimmer skeleton — loading placeholder */
+@keyframes cf-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.cf-shimmer {
+  background: linear-gradient(90deg, #1e293b 25%, #2d3f55 50%, #1e293b 75%);
+  background-size: 800px 100%;
+  animation: cf-shimmer 1.4s linear infinite;
+}
+
+/* Glow on violet buttons */
+.cf-glow:hover {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.45);
+  transition: box-shadow 0.2s ease;
+}

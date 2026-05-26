@@ -152,7 +152,7 @@ export default function BuildConfigPanel({ config, onChange, onBuild, isBuilding
         className={`flex items-center justify-center gap-2 py-3 rounded-md font-semibold text-sm transition-all ${
           isBuilding
             ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-            : 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/40 hover:shadow-violet-800/50'
+            : 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/40 hover:shadow-violet-800/50 cf-glow'
         }`}
       >
         {isBuilding ? (

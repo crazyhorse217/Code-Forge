@@ -93,7 +93,7 @@ export default function WelcomeTour({ onClose }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
     >
-      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="cf-modal relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
 
         {/* Dismiss */}
         <button
@@ -112,7 +112,7 @@ export default function WelcomeTour({ onClose }: Props) {
         </div>
 
         {/* Content */}
-        <div className="px-8 pt-8 pb-6 text-center">
+        <div className="px-8 pt-8 pb-6 text-center cf-slide-in" key={step}>
           {/* Emoji */}
           <div className="text-6xl mb-5 leading-none">{current.emoji}</div>
 

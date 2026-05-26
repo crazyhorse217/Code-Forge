@@ -9,12 +9,81 @@ import { buildProject } from './build-engine/index'
 
 let mainWindow: BrowserWindow | null = null
 
+// ── Splash screen ─────────────────────────────────────────────────────────────
+function createSplash(): BrowserWindow {
+  const splash = new BrowserWindow({
+    width: 480,
+    height: 300,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    center: true,
+    webPreferences: { contextIsolation: true }
+  })
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{width:480px;height:300px;background:#0f172a;border-radius:16px;overflow:hidden;
+    font-family:system-ui,sans-serif;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;position:relative;
+    border:1px solid rgba(124,58,237,0.35);
+    box-shadow:0 0 80px rgba(124,58,237,0.2),0 25px 60px rgba(0,0,0,0.6);}
+  .glow{position:absolute;width:320px;height:220px;
+    background:radial-gradient(ellipse,rgba(124,58,237,0.18) 0%,transparent 70%);
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}
+    50%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}
+  .icon{font-size:52px;margin-bottom:10px;position:relative;z-index:1;
+    animation:float 3s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .name{font-size:30px;font-weight:900;color:#fff;letter-spacing:3px;
+    position:relative;z-index:1;text-shadow:0 0 40px rgba(167,139,250,0.6);}
+  .name span{color:#a78bfa;}
+  .tag{font-size:11px;color:#475569;margin-top:6px;position:relative;z-index:1;
+    letter-spacing:2px;text-transform:uppercase;}
+  .ver{font-size:10px;color:#334155;margin-top:3px;position:relative;z-index:1;}
+  .dots{display:flex;gap:7px;margin-top:22px;position:relative;z-index:1;}
+  .dot{width:6px;height:6px;border-radius:50%;background:#7c3aed;
+    animation:bounce 1.2s ease-in-out infinite;}
+  .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,80%,100%{transform:scale(.55);opacity:.4}40%{transform:scale(1);opacity:1}}
+  .bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(124,58,237,.12);}
+  .fill{height:100%;background:linear-gradient(90deg,#4c1d95,#7c3aed,#a78bfa,#7c3aed,#4c1d95);
+    background-size:300% 100%;
+    animation:grow 2.6s cubic-bezier(.4,0,.2,1) forwards,shine 1.8s linear infinite;}
+  @keyframes grow{0%{width:0%}50%{width:65%}85%{width:90%}100%{width:100%}}
+  @keyframes shine{0%{background-position:100% 0}100%{background-position:-200% 0}}
+  .corner{position:absolute;width:28px;height:28px;border-color:rgba(124,58,237,.25);border-style:solid;}
+  .tl{top:14px;left:14px;border-width:2px 0 0 2px;border-radius:4px 0 0 0}
+  .tr{top:14px;right:14px;border-width:2px 2px 0 0;border-radius:0 4px 0 0}
+  .bl{bottom:14px;left:14px;border-width:0 0 2px 2px;border-radius:0 0 0 4px}
+  .br{bottom:14px;right:14px;border-width:0 2px 2px 0;border-radius:0 0 4px 0}
+  </style></head><body>
+  <div class="glow"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+  <div class="icon">🔨</div>
+  <div class="name">Code<span>Forge</span></div>
+  <div class="tag">Source Code → Real Apps</div>
+  <div class="ver">v1.0.0</div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  <div class="bar"><div class="fill"></div></div>
+  </body></html>`
+
+  splash.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+  return splash
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1024,
     minHeight: 700,
+    show: false,                     // hidden until splash is done
     backgroundColor: '#0f172a',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
@@ -29,7 +98,6 @@ function createWindow(): void {
     }
   })
 
-  mainWindow.on('ready-to-show', () => mainWindow!.show())
   mainWindow.on('closed', () => { mainWindow = null })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
@@ -39,8 +107,23 @@ function createWindow(): void {
   }
 }
 
+const MIN_SPLASH_MS = is.dev ? 1200 : 2600   // shorter in dev
+
 app.whenReady().then(() => {
+  const splash = createSplash()
+  const splashShown = Date.now()
+
   createWindow()
+
+  mainWindow!.once('ready-to-show', () => {
+    const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - splashShown))
+    setTimeout(() => {
+      splash.destroy()
+      mainWindow?.show()
+      mainWindow?.focus()
+    }, wait)
+  })
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

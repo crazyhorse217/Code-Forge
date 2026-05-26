@@ -52,7 +52,7 @@ export default function BuildProgress({ logs, isBuilding }: Props) {
         )}
 
         {logs.map((entry) => (
-          <div key={entry.id} className="flex gap-2 mb-0.5">
+          <div key={entry.id} className="cf-log-entry flex gap-2 mb-0.5">
             <span className="text-slate-700 flex-shrink-0 select-none">
               {new Date(entry.timestamp).toLocaleTimeString([], {
                 hour: '2-digit',
@@ -67,7 +67,7 @@ export default function BuildProgress({ logs, isBuilding }: Props) {
                   : entry.type === 'step'
                   ? 'text-violet-400 font-semibold'
                   : entry.type === 'success'
-                  ? 'text-emerald-400 font-semibold'
+                  ? 'text-emerald-400 font-semibold cf-pop'
                   : 'text-slate-300'
               }
             >
@@ -78,9 +78,9 @@ export default function BuildProgress({ logs, isBuilding }: Props) {
         ))}
 
         {isBuilding && (
-          <div className="flex gap-2 mt-1">
+          <div className="flex gap-2 mt-1 cf-log-entry">
             <span className="text-slate-700">···</span>
-            <span className="text-slate-500 animate-pulse">running</span>
+            <span className="text-violet-500 animate-pulse">running…</span>
           </div>
         )}
 
