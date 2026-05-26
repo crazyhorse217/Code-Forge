@@ -1,0 +1,17 @@
+appId: com.codeforge.app
+productName: CodeForge
+directories:
+  buildResources: resources
+  output: releases
+files:
+  - out/**/*
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
