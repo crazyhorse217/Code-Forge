@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles, Eye } from 'lucide-react'
+import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles, Eye, LayoutTemplate } from 'lucide-react'
 import CodeEditor from './components/CodeEditor'
 import BuildConfigPanel from './components/BuildConfig'
 import BuildProgress from './components/BuildProgress'
@@ -7,6 +7,7 @@ import DownloadPanel from './components/DownloadPanel'
 import BuildHistory from './components/BuildHistory'
 import AIAssistant from './components/AIAssistant'
 import UpdateBanner, { useUpdater } from './components/UpdateBanner'
+import TemplateModal from './components/TemplateModal'
 import ThemeSwitcher, { type Theme } from './components/ThemeSwitcher'
 import type { BuildConfig, LogEntry, BuildOutputPaths, ToolStatus, BuildHistoryEntry } from './types'
 
@@ -39,6 +40,7 @@ export default function App() {
   const cleanupRef = useRef<(() => void)[]>([])
   const buildStartRef = useRef<number>(0)
   const updater = useUpdater()
+  const [showTemplates, setShowTemplates] = useState(false)
 
   const hasHtmlFiles = Object.keys(files).some((f) => f.endsWith('.html'))
 
@@ -211,6 +213,14 @@ export default function App() {
           {/* Project save / load */}
           <div className="flex items-center gap-1 ml-2">
             <button
+              onClick={() => setShowTemplates(true)}
+              title="New from template"
+              className="flex items-center gap-1 px-2 py-1 text-xs text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
+            >
+              <LayoutTemplate className="w-3.5 h-3.5" />
+              Templates
+            </button>
+            <button
               onClick={handleSaveProject}
               title="Save project"
               className="flex items-center gap-1 px-2 py-1 text-xs text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
@@ -320,6 +330,15 @@ export default function App() {
             )}
           </div>
         </div>
+
+        {/* Template modal */}
+        {showTemplates && (
+          <TemplateModal
+            hasFiles={Object.keys(files).length > 0}
+            onSelect={(tplFiles) => { setFiles(tplFiles); setActiveTab('editor') }}
+            onClose={() => setShowTemplates(false)}
+          />
+        )}
 
         {/* Right sidebar */}
         <div className="w-[300px] flex-shrink-0 flex flex-col bg-slate-900 overflow-y-auto">
