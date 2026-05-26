@@ -28,5 +28,11 @@ interface Window {
     onUpdateDownloaded(cb: () => void): () => void
     installUpdate(): void
     previewApp(files: Record<string, string>): Promise<{ success?: boolean; error?: string }>
+    listDrives(): Promise<Array<{ device: string; number: number; description: string; size: number; letters: string }>>
+    pickIso(): Promise<{ path: string; size: number } | null>
+    flashIso(isoPath: string, drivePath: string): void
+    cancelFlash(): void
+    onFlashProgress(cb: (p: { written: number; total: number; speed: number; eta: number }) => void): () => void
+    onFlashComplete(cb: (result: { success: boolean; error?: string }) => void): () => void
   }
 }

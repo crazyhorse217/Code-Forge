@@ -91,5 +91,32 @@ contextBridge.exposeInMainWorld('api', {
 
   // ── Preview window ────────────────────────────────────────────────────────
   previewApp: (files: Record<string, string>): Promise<{ success?: boolean; error?: string }> =>
-    ipcRenderer.invoke('preview-app', files)
+    ipcRenderer.invoke('preview-app', files),
+
+  // ── ISO Flasher ───────────────────────────────────────────────────────────
+  listDrives: (): Promise<Array<{ device: string; number: number; description: string; size: number; letters: string }>> =>
+    ipcRenderer.invoke('list-drives'),
+
+  pickIso: (): Promise<{ path: string; size: number } | null> =>
+    ipcRenderer.invoke('pick-iso'),
+
+  flashIso: (isoPath: string, drivePath: string): void => {
+    ipcRenderer.send('flash-iso', { isoPath, drivePath })
+  },
+
+  cancelFlash: (): void => {
+    ipcRenderer.send('cancel-flash')
+  },
+
+  onFlashProgress: (cb: (p: { written: number; total: number; speed: number; eta: number }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, p: { written: number; total: number; speed: number; eta: number }): void => cb(p)
+    ipcRenderer.on('flash-progress', handler)
+    return () => ipcRenderer.removeListener('flash-progress', handler)
+  },
+
+  onFlashComplete: (cb: (result: { success: boolean; error?: string }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, result: { success: boolean; error?: string }): void => cb(result)
+    ipcRenderer.on('flash-complete', handler)
+    return () => ipcRenderer.removeListener('flash-complete', handler)
+  }
 })

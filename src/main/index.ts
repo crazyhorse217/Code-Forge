@@ -378,6 +378,141 @@ ipcMain.on('install-update', () => {
   autoUpdater.quitAndInstall()
 })
 
+// ── IPC: List USB drives (Windows PowerShell) ─────────────────────────────────
+ipcMain.handle('list-drives', async () => {
+  const tmpScript = path.join(app.getPath('temp'), 'cf-listdrives.ps1')
+  const script = `
+$result = @()
+foreach ($disk in (Get-Disk | Where-Object {$_.BusType -eq 'USB'})) {
+  try {
+    $vols = Get-Partition -DiskNumber $disk.Number -ErrorAction SilentlyContinue |
+            Get-Volume -ErrorAction SilentlyContinue
+    $letters = if ($vols) { ($vols.DriveLetter | Where-Object {$_}) -join ',' } else { '' }
+  } catch { $letters = '' }
+  $result += [PSCustomObject]@{
+    device      = '\\\\.\\PhysicalDrive' + $disk.Number
+    number      = [int]$disk.Number
+    description = [string]$disk.FriendlyName
+    size        = [long]$disk.Size
+    letters     = $letters
+  }
+}
+if ($result.Count -eq 0) { '[]' } else { ConvertTo-Json $result }
+`
+  try {
+    fs.writeFileSync(tmpScript, script, 'utf8')
+    const out = execSync(`powershell -NoProfile -NonInteractive -File "${tmpScript}"`, {
+      timeout: 15000,
+      windowsHide: true,
+      encoding: 'utf8'
+    }).trim()
+    try { fs.unlinkSync(tmpScript) } catch { /* ignore */ }
+    if (!out || out === '[]') return []
+    const parsed = JSON.parse(out)
+    return Array.isArray(parsed) ? parsed : [parsed]
+  } catch {
+    try { fs.unlinkSync(tmpScript) } catch { /* ignore */ }
+    return []
+  }
+})
+
+// ── IPC: Pick ISO file ────────────────────────────────────────────────────────
+ipcMain.handle('pick-iso', async () => {
+  const { filePaths, canceled } = await dialog.showOpenDialog(mainWindow!, {
+    title: 'Select ISO Image',
+    filters: [{ name: 'ISO Images', extensions: ['iso', 'img'] }],
+    properties: ['openFile']
+  })
+  if (canceled || filePaths.length === 0) return null
+  const p = filePaths[0]
+  const size = fs.statSync(p).size
+  return { path: p, size }
+})
+
+// ── IPC: Flash ISO to physical drive ─────────────────────────────────────────
+let flashCancelled = false
+
+ipcMain.on('flash-iso', (event, { isoPath, drivePath }: { isoPath: string; drivePath: string }) => {
+  const sender = event.sender
+  flashCancelled = false
+
+  const CHUNK = 4 * 1024 * 1024 // 4 MB
+
+  ;(async () => {
+    let isoHandle: fs.promises.FileHandle | null = null
+    let driveHandle: fs.promises.FileHandle | null = null
+
+    try {
+      const isoSize = fs.statSync(isoPath).size
+      isoHandle = await fs.promises.open(isoPath, 'r')
+
+      try {
+        driveHandle = await fs.promises.open(drivePath, 'r+')
+      } catch (err: unknown) {
+        const e = err as NodeJS.ErrnoException
+        if (!sender.isDestroyed()) {
+          sender.send('flash-complete', {
+            success: false,
+            error: e.code === 'EACCES' ? 'needs-admin' : (e.message || String(err))
+          })
+        }
+        return
+      }
+
+      const buf = Buffer.alloc(CHUNK)
+      let written = 0
+      let speedStart = Date.now()
+      let speedBytes = 0
+
+      while (!flashCancelled) {
+        const { bytesRead } = await isoHandle.read(buf, 0, CHUNK, written)
+        if (bytesRead === 0) break
+
+        // Align write size to 512-byte sector boundary for raw device
+        const aligned = bytesRead % 512 === 0 ? bytesRead : bytesRead + (512 - bytesRead % 512)
+        if (aligned > bytesRead) buf.fill(0, bytesRead, aligned)
+
+        await driveHandle.write(buf, 0, aligned, written)
+        written += bytesRead   // track real bytes, not padded
+        speedBytes += bytesRead
+
+        const now = Date.now()
+        if (now - speedStart >= 400 && !sender.isDestroyed()) {
+          const speed = (speedBytes / (now - speedStart)) * 1000
+          const eta = speed > 0 ? (isoSize - written) / speed : 0
+          sender.send('flash-progress', { written, total: isoSize, speed, eta })
+          speedStart = now
+          speedBytes = 0
+        }
+      }
+
+      if (!sender.isDestroyed()) {
+        if (flashCancelled) {
+          sender.send('flash-complete', { success: false, error: 'cancelled' })
+        } else {
+          sender.send('flash-progress', { written, total: written, speed: 0, eta: 0 })
+          sender.send('flash-complete', { success: true })
+        }
+      }
+    } catch (err: unknown) {
+      const e = err as NodeJS.ErrnoException
+      if (!sender.isDestroyed()) {
+        sender.send('flash-complete', {
+          success: false,
+          error: e.code === 'EACCES' ? 'needs-admin' : (e.message || String(err))
+        })
+      }
+    } finally {
+      await isoHandle?.close().catch(() => { /* ignore */ })
+      await driveHandle?.close().catch(() => { /* ignore */ })
+    }
+  })()
+})
+
+ipcMain.on('cancel-flash', () => {
+  flashCancelled = true
+})
+
 // ── IPC: Preview web app in sandboxed window ──────────────────────────────────
 ipcMain.handle('preview-app', async (_, files: Record<string, string>) => {
   const tmpDir = path.join(app.getPath('temp'), 'codeforge-preview')

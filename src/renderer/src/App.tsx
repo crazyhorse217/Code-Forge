@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles, Eye, LayoutTemplate, BookOpen } from 'lucide-react'
+import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles, Eye, LayoutTemplate, BookOpen, Usb } from 'lucide-react'
 import CodeEditor from './components/CodeEditor'
 import BuildConfigPanel from './components/BuildConfig'
 import BuildProgress from './components/BuildProgress'
@@ -10,10 +10,11 @@ import UpdateBanner, { useUpdater } from './components/UpdateBanner'
 import TemplateModal from './components/TemplateModal'
 import TutorialPanel from './components/TutorialPanel'
 import WelcomeTour from './components/WelcomeTour'
+import IsoFlasher from './components/IsoFlasher'
 import ThemeSwitcher, { type Theme } from './components/ThemeSwitcher'
 import type { BuildConfig, LogEntry, BuildOutputPaths, ToolStatus, BuildHistoryEntry } from './types'
 
-type Tab = 'editor' | 'log' | 'history' | 'ai' | 'guide'
+type Tab = 'editor' | 'log' | 'history' | 'ai' | 'guide' | 'flash'
 
 let logIdCounter = 0
 let historyIdCounter = 0
@@ -315,6 +316,12 @@ export default function App() {
               icon={<BookOpen className="w-3.5 h-3.5" />}
               label="Guide"
             />
+            <TabButton
+              active={activeTab === 'flash'}
+              onClick={() => setActiveTab('flash')}
+              icon={<Usb className="w-3.5 h-3.5" />}
+              label="Flash USB"
+            />
           </div>
 
           {/* Pane content */}
@@ -341,6 +348,9 @@ export default function App() {
             )}
             {activeTab === 'guide' && (
               <TutorialPanel onStartTour={() => setShowTour(true)} />
+            )}
+            {activeTab === 'flash' && (
+              <IsoFlasher />
             )}
           </div>
         </div>
