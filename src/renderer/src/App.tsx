@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles } from 'lucide-react'
+import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles, Eye } from 'lucide-react'
 import CodeEditor from './components/CodeEditor'
 import BuildConfigPanel from './components/BuildConfig'
 import BuildProgress from './components/BuildProgress'
 import DownloadPanel from './components/DownloadPanel'
 import BuildHistory from './components/BuildHistory'
 import AIAssistant from './components/AIAssistant'
+import UpdateBanner, { useUpdater } from './components/UpdateBanner'
 import ThemeSwitcher, { type Theme } from './components/ThemeSwitcher'
 import type { BuildConfig, LogEntry, BuildOutputPaths, ToolStatus, BuildHistoryEntry } from './types'
 
@@ -37,10 +38,16 @@ export default function App() {
 
   const cleanupRef = useRef<(() => void)[]>([])
   const buildStartRef = useRef<number>(0)
+  const updater = useUpdater()
+
+  const hasHtmlFiles = Object.keys(files).some((f) => f.endsWith('.html'))
 
   useEffect(() => {
     window.api.checkTools().then((t) => setTools(t as ToolStatus))
   }, [])
+
+  // Subscribe to update events once on mount
+  useEffect(() => updater.subscribe(), [])
 
   // On startup, reload saved photo from its file path
   useEffect(() => {
@@ -146,6 +153,14 @@ export default function App() {
     window.api.startBuild(files, config)
   }, [files, config, addLog])
 
+  const handlePreview = useCallback(async () => {
+    const result = await window.api.previewApp(files)
+    if (result.error) {
+      addLog('error', `Preview failed: ${result.error}`)
+      setActiveTab('log')
+    }
+  }, [files, addLog])
+
   const handleSaveProject = useCallback(async () => {
     await window.api.saveProject({ files, config })
   }, [files, config])
@@ -171,6 +186,16 @@ export default function App() {
       data-theme={theme}
       style={bgStyle}
     >
+      {/* Update banner */}
+      {updater.showBanner && updater.updateState && (
+        <UpdateBanner
+          state={updater.updateState}
+          version={updater.updateVersion}
+          onInstall={updater.install}
+          onDismiss={updater.dismiss}
+        />
+      )}
+
       {/* Title bar / header */}
       <header
         className="drag-region flex items-center justify-between px-5 bg-slate-900 border-b border-slate-800"
@@ -201,6 +226,16 @@ export default function App() {
               <FolderOpen className="w-3.5 h-3.5" />
               Open
             </button>
+            {hasHtmlFiles && (
+              <button
+                onClick={handlePreview}
+                title="Preview web app"
+                className="flex items-center gap-1 px-2 py-1 text-xs text-violet-400 hover:text-violet-300 hover:bg-slate-800 rounded transition-colors"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Preview
+              </button>
+            )}
           </div>
         </div>
 

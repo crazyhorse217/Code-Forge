@@ -70,5 +70,26 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_: Electron.IpcRendererEvent, error: string): void => cb(error)
     ipcRenderer.on('ai-error', handler)
     return () => ipcRenderer.removeListener('ai-error', handler)
-  }
+  },
+
+  // ── Auto-updater ──────────────────────────────────────────────────────────
+  onUpdateAvailable: (cb: (info: { version: string }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, info: { version: string }): void => cb(info)
+    ipcRenderer.on('update-available', handler)
+    return () => ipcRenderer.removeListener('update-available', handler)
+  },
+
+  onUpdateDownloaded: (cb: () => void): (() => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('update-downloaded', handler)
+    return () => ipcRenderer.removeListener('update-downloaded', handler)
+  },
+
+  installUpdate: (): void => {
+    ipcRenderer.send('install-update')
+  },
+
+  // ── Preview window ────────────────────────────────────────────────────────
+  previewApp: (files: Record<string, string>): Promise<{ success?: boolean; error?: string }> =>
+    ipcRenderer.invoke('preview-app', files)
 })

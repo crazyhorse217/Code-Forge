@@ -24,5 +24,9 @@ interface Window {
     onAiChunk(cb: (text: string) => void): () => void
     onAiDone(cb: () => void): () => void
     onAiError(cb: (error: string) => void): () => void
+    onUpdateAvailable(cb: (info: { version: string }) => void): () => void
+    onUpdateDownloaded(cb: () => void): () => void
+    installUpdate(): void
+    previewApp(files: Record<string, string>): Promise<{ success?: boolean; error?: string }>
   }
 }

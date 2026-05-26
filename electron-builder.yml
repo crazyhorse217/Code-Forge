@@ -5,6 +5,10 @@ directories:
   output: releases
 files:
   - out/**/*
+publish:
+  provider: github
+  owner: crazyhorse217
+  repo: Code-Forge
 win:
   target:
     - target: nsis

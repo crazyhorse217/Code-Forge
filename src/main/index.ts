@@ -4,6 +4,7 @@ import { is } from '@electron-toolkit/utils'
 import { execSync } from 'child_process'
 import fs from 'fs'
 import Anthropic from '@anthropic-ai/sdk'
+import { autoUpdater } from 'electron-updater'
 import { buildProject } from './build-engine/index'
 
 let mainWindow: BrowserWindow | null = null
@@ -43,6 +44,26 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // ── Auto-updater (packaged builds only) ─────────────────────────────────────
+  if (!is.dev) {
+    autoUpdater.autoDownload = true
+    autoUpdater.autoInstallOnAppQuit = true
+
+    autoUpdater.on('update-available', (info) => {
+      mainWindow?.webContents.send('update-available', { version: info.version })
+    })
+
+    autoUpdater.on('update-downloaded', () => {
+      mainWindow?.webContents.send('update-downloaded')
+    })
+
+    autoUpdater.on('error', (err) => {
+      console.error('[AutoUpdater]', err.message)
+    })
+
+    autoUpdater.checkForUpdates().catch(console.error)
+  }
 })
 
 app.on('window-all-closed', () => {
@@ -267,4 +288,50 @@ ${errorLog}`
       if (!sender.isDestroyed()) sender.send('ai-error', message)
     }
   })()
+})
+
+// ── IPC: Install downloaded update ────────────────────────────────────────────
+ipcMain.on('install-update', () => {
+  autoUpdater.quitAndInstall()
+})
+
+// ── IPC: Preview web app in sandboxed window ──────────────────────────────────
+ipcMain.handle('preview-app', async (_, files: Record<string, string>) => {
+  const tmpDir = path.join(app.getPath('temp'), 'codeforge-preview')
+
+  try {
+    if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true })
+    fs.mkdirSync(tmpDir, { recursive: true })
+
+    for (const [name, content] of Object.entries(files)) {
+      const dest = path.join(tmpDir, name)
+      fs.mkdirSync(path.dirname(dest), { recursive: true })
+      fs.writeFileSync(dest, content, 'utf8')
+    }
+
+    const entry =
+      Object.keys(files).find((f) => f === 'index.html') ??
+      Object.keys(files).find((f) => f.endsWith('/index.html')) ??
+      Object.keys(files).find((f) => f.endsWith('.html'))
+
+    if (!entry) return { error: 'No HTML file found to preview' }
+
+    const previewWin = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      title: `Preview — ${entry}`,
+      parent: mainWindow ?? undefined,
+      autoHideMenuBar: true,
+      webPreferences: {
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    })
+
+    previewWin.loadFile(path.join(tmpDir, entry))
+    return { success: true }
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
 })
