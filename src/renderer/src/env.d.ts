@@ -15,6 +15,9 @@ interface Window {
     saveFile(srcPath: string, defaultName: string): Promise<string | null>
     openFolder(folderPath: string): Promise<void>
     extractZip(zipPath: string): Promise<Record<string, string>>
+    pickZip(): Promise<string | null>
+    pickSourceFiles(): Promise<Array<{ name: string; content: string }>>
+    extractZipBuffer(buffer: ArrayBuffer): Promise<Record<string, string>>
     pickBackground(): Promise<{ dataUrl: string; filePath: string } | null>
     loadBackground(filePath: string): Promise<{ dataUrl: string; filePath: string } | null>
     pickIcon(): Promise<string | null>

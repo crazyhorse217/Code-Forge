@@ -2,6 +2,7 @@
   "name": "codeforge",
   "version": "1.0.0",
   "description": "Convert raw source code into downloadable EXE and APK files",
+  "author": "CodeForge",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

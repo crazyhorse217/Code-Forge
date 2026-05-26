@@ -535,6 +535,51 @@ ipcMain.handle('find-signtool', () => {
   return null
 })
 
+// ── IPC: Pick a ZIP file (returns path) ──────────────────────────────────────
+ipcMain.handle('pick-zip', async () => {
+  const { filePaths, canceled } = await dialog.showOpenDialog(mainWindow!, {
+    title: 'Import ZIP Project',
+    filters: [{ name: 'ZIP Archives', extensions: ['zip'] }],
+    properties: ['openFile']
+  })
+  return canceled || filePaths.length === 0 ? null : filePaths[0]
+})
+
+// ── IPC: Pick source files and return name+content pairs ──────────────────────
+ipcMain.handle('pick-source-files', async () => {
+  const { filePaths, canceled } = await dialog.showOpenDialog(mainWindow!, {
+    title: 'Import Source Files',
+    filters: [
+      {
+        name: 'Source Files',
+        extensions: ['html', 'htm', 'css', 'js', 'jsx', 'ts', 'tsx', 'py',
+                     'json', 'md', 'xml', 'sh', 'yaml', 'yml', 'txt', 'env', 'toml']
+      },
+      { name: 'All Files', extensions: ['*'] }
+    ],
+    properties: ['openFile', 'multiSelections']
+  })
+  if (canceled || filePaths.length === 0) return []
+  return filePaths.map((fp) => ({
+    name: path.basename(fp),
+    content: (() => { try { return fs.readFileSync(fp, 'utf8') } catch { return '' } })()
+  }))
+})
+
+// ── IPC: Extract ZIP from a raw buffer (fallback when path is unavailable) ────
+ipcMain.handle('extract-zip-buffer', async (_, buffer: ArrayBuffer) => {
+  const AdmZip = (await import('adm-zip')).default
+  const zip = new AdmZip(Buffer.from(buffer))
+  const result: Record<string, string> = {}
+  for (const entry of zip.getEntries()) {
+    if (entry.isDirectory) continue
+    const name = entry.entryName
+    if (name.startsWith('__MACOSX') || name.startsWith('.')) continue
+    try { result[name] = entry.getData().toString('utf8') } catch { /* skip binary */ }
+  }
+  return result
+})
+
 // ── IPC: Pick .pfx certificate file ──────────────────────────────────────────
 ipcMain.handle('pick-cert', async () => {
   const { filePaths, canceled } = await dialog.showOpenDialog(mainWindow!, {

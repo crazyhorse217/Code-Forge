@@ -35,6 +35,15 @@ contextBridge.exposeInMainWorld('api', {
   extractZip: (zipPath: string): Promise<Record<string, string>> =>
     ipcRenderer.invoke('extract-zip', zipPath),
 
+  pickZip: (): Promise<string | null> =>
+    ipcRenderer.invoke('pick-zip'),
+
+  pickSourceFiles: (): Promise<Array<{ name: string; content: string }>> =>
+    ipcRenderer.invoke('pick-source-files'),
+
+  extractZipBuffer: (buffer: ArrayBuffer): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('extract-zip-buffer', buffer),
+
   pickBackground: (): Promise<{ dataUrl: string; filePath: string } | null> =>
     ipcRenderer.invoke('pick-background'),
 

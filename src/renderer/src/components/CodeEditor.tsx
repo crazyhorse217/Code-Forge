@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import Editor from '@monaco-editor/react'
-import { Plus, X, Upload, FileCode, Archive, Check } from 'lucide-react'
+import { Plus, X, Upload, FileCode, Archive, Check, FolderOpen, FileUp } from 'lucide-react'
 
 interface Props {
   files: Record<string, string>
@@ -9,21 +9,11 @@ interface Props {
 }
 
 const EXT_LANG: Record<string, string> = {
-  html: 'html',
-  htm: 'html',
-  css: 'css',
-  js: 'javascript',
-  jsx: 'javascript',
-  ts: 'typescript',
-  tsx: 'typescript',
-  py: 'python',
-  json: 'json',
-  md: 'markdown',
-  xml: 'xml',
-  sh: 'shell',
-  yaml: 'yaml',
-  yml: 'yaml',
-  txt: 'plaintext'
+  html: 'html', htm: 'html', css: 'css',
+  js: 'javascript', jsx: 'javascript',
+  ts: 'typescript', tsx: 'typescript',
+  py: 'python', json: 'json', md: 'markdown',
+  xml: 'xml', sh: 'shell', yaml: 'yaml', yml: 'yaml', txt: 'plaintext'
 }
 
 function getLang(filename: string): string {
@@ -33,11 +23,12 @@ function getLang(filename: string): string {
 
 export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dark' }: Props) {
   const [activeFile, setActiveFile] = useState<string>('')
-  const [naming, setNaming] = useState(false)
-  const [newName, setNewName] = useState('')
+  const [naming, setNaming]         = useState(false)
+  const [newName, setNewName]       = useState('')
+  const [importing, setImporting]   = useState(false)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
-  const fileNames = Object.keys(files)
+  const fileNames  = Object.keys(files)
   const currentFile = fileNames.includes(activeFile) ? activeFile : fileNames[0] ?? ''
 
   const setContent = (value: string | undefined) => {
@@ -48,8 +39,7 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
   const startNaming = () => {
     setNewName('')
     setNaming(true)
-    // Focus after render
-    setTimeout(() => nameInputRef.current?.focus(), 0)
+    setTimeout(() => nameInputRef.current?.focus(), 50)
   }
 
   const commitNewFile = () => {
@@ -61,10 +51,7 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
     setActiveFile(name)
   }
 
-  const cancelNaming = () => {
-    setNaming(false)
-    setNewName('')
-  }
+  const cancelNaming = () => { setNaming(false); setNewName('') }
 
   const deleteFile = (name: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -74,42 +61,74 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
     if (activeFile === name) setActiveFile(Object.keys(next)[0] ?? '')
   }
 
-  const handleDrop = useCallback(
-    async (e: React.DragEvent) => {
-      e.preventDefault()
-      const dropped = Array.from(e.dataTransfer.files)
+  // ── Native file-dialog imports (reliable in packaged app) ─────────────────
+  const handleImportZip = useCallback(async () => {
+    setImporting(true)
+    try {
+      const zipPath = await window.api.pickZip()
+      if (!zipPath) return
+      const extracted = await window.api.extractZip(zipPath)
+      if (Object.keys(extracted).length === 0) return
+      const next = { ...files, ...extracted }
+      onFilesChange(next)
+      setActiveFile(Object.keys(extracted)[0])
+    } finally {
+      setImporting(false)
+    }
+  }, [files, onFilesChange])
+
+  const handleImportFiles = useCallback(async () => {
+    setImporting(true)
+    try {
+      const imported = await window.api.pickSourceFiles()
+      if (imported.length === 0) return
       const next = { ...files }
-      let firstNew = ''
+      for (const { name, content } of imported) next[name] = content
+      onFilesChange(next)
+      setActiveFile(imported[0].name)
+    } finally {
+      setImporting(false)
+    }
+  }, [files, onFilesChange])
 
-      for (const file of dropped) {
-        // ZIP extraction — use the real filesystem path available in Electron
-        if (file.name.endsWith('.zip')) {
-          const zipPath = (file as File & { path?: string }).path
-          if (zipPath) {
-            const extracted = await window.api.extractZip(zipPath)
-            for (const [name, content] of Object.entries(extracted)) {
-              next[name] = content
-              if (!firstNew) firstNew = name
-            }
-          }
-          continue
+  // ── Drag-and-drop (with path fallback for packaged app) ───────────────────
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    const dropped = Array.from(e.dataTransfer.files)
+    const next = { ...files }
+    let firstNew = ''
+
+    for (const file of dropped) {
+      if (file.name.endsWith('.zip')) {
+        // Try path-based extraction first (works in dev), fallback to buffer (works in packaged)
+        const zipPath = (file as File & { path?: string }).path
+        let extracted: Record<string, string> = {}
+        if (zipPath) {
+          extracted = await window.api.extractZip(zipPath)
+        } else {
+          const buf = await file.arrayBuffer()
+          extracted = await window.api.extractZipBuffer(buf)
         }
-
-        // Regular text file
-        const content: string = await new Promise((resolve) => {
-          const reader = new FileReader()
-          reader.onload = (ev) => resolve((ev.target?.result as string) ?? '')
-          reader.readAsText(file)
-        })
-        next[file.name] = content
-        if (!firstNew) firstNew = file.name
+        for (const [name, content] of Object.entries(extracted)) {
+          next[name] = content
+          if (!firstNew) firstNew = name
+        }
+        continue
       }
 
-      onFilesChange(next)
-      if (firstNew && !fileNames.includes(activeFile)) setActiveFile(firstNew)
-    },
-    [files, activeFile, fileNames, onFilesChange]
-  )
+      // Regular text file — read in renderer
+      const content: string = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (ev) => resolve((ev.target?.result as string) ?? '')
+        reader.readAsText(file)
+      })
+      next[file.name] = content
+      if (!firstNew) firstNew = file.name
+    }
+
+    onFilesChange(next)
+    if (firstNew) setActiveFile(firstNew)
+  }, [files, onFilesChange])
 
   return (
     <div
@@ -117,7 +136,7 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      {/* File tabs */}
+      {/* ── Tab bar ── */}
       <div className="flex items-center gap-0.5 px-2 py-1 bg-slate-950 border-b border-slate-800 overflow-x-auto min-h-[36px]">
         {fileNames.map((name) => (
           <button
@@ -140,59 +159,105 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
             </span>
           </button>
         ))}
+
+        {/* Inline new-file input */}
         {naming ? (
-          <div className="flex items-center gap-1 ml-1">
+          <div className="flex items-center gap-1 ml-1 flex-shrink-0">
             <input
               ref={nameInputRef}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') commitNewFile()
+                if (e.key === 'Enter')  commitNewFile()
                 if (e.key === 'Escape') cancelNaming()
               }}
               placeholder="filename.html"
               className="w-32 px-2 py-0.5 text-xs bg-slate-800 border border-violet-500 rounded text-slate-100 placeholder-slate-600 focus:outline-none"
             />
-            <button onClick={commitNewFile} className="text-emerald-400 hover:text-emerald-300">
+            <button onClick={commitNewFile} className="text-emerald-400 hover:text-emerald-300 flex-shrink-0">
               <Check className="w-3.5 h-3.5" />
             </button>
-            <button onClick={cancelNaming} className="text-slate-500 hover:text-red-400">
+            <button onClick={cancelNaming} className="text-slate-500 hover:text-red-400 flex-shrink-0">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
-          <button
-            onClick={startNaming}
-            title="New file"
-            className="p-1 ml-1 text-slate-500 hover:text-violet-400 transition-colors flex-shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-0.5 ml-1 flex-shrink-0">
+            {/* + New file */}
+            <button
+              onClick={startNaming}
+              title="New file"
+              className="p-1 text-slate-500 hover:text-violet-400 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            {/* Open file(s) */}
+            <button
+              onClick={handleImportFiles}
+              disabled={importing}
+              title="Open file(s)"
+              className="p-1 text-slate-500 hover:text-blue-400 transition-colors disabled:opacity-40"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+            </button>
+            {/* Import ZIP */}
+            <button
+              onClick={handleImportZip}
+              disabled={importing}
+              title="Import ZIP project"
+              className="p-1 text-slate-500 hover:text-emerald-400 transition-colors disabled:opacity-40"
+            >
+              <Archive className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Editor or empty state */}
+      {/* ── Empty state ── */}
       {fileNames.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-600">
-          <Upload className="w-14 h-14 opacity-40" />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-600 p-6">
+          <Upload className="w-14 h-14 opacity-30" />
           <div className="text-center">
-            <p className="text-slate-400 font-medium mb-1">Drop files or a .zip folder here</p>
-            <p className="text-sm text-slate-600">
-              Supports .html .css .js .ts .py .json — or drop a .zip to extract all at once
+            <p className="text-slate-300 font-semibold text-base mb-1">No files yet</p>
+            <p className="text-sm text-slate-500 max-w-xs">
+              Create a blank file, open existing source files, import a ZIP project, or drag &amp; drop files here.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-700">
-            <Archive className="w-3.5 h-3.5" />
-            <span>.zip auto-extracted</span>
+
+          {/* Three big action buttons */}
+          <div className="flex flex-col gap-2 w-full max-w-xs mt-2">
+            <button
+              onClick={startNaming}
+              className="flex items-center gap-2.5 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New blank file
+            </button>
+            <button
+              onClick={handleImportFiles}
+              disabled={importing}
+              className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+            >
+              <FolderOpen className="w-4 h-4 text-blue-400" />
+              Open source file(s)…
+            </button>
+            <button
+              onClick={handleImportZip}
+              disabled={importing}
+              className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+            >
+              <Archive className="w-4 h-4 text-emerald-400" />
+              Import ZIP project…
+            </button>
           </div>
-          <button
-            onClick={startNaming}
-            className="mt-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm rounded-md transition-colors"
-          >
-            + New file
-          </button>
+
+          <p className="text-xs text-slate-700 mt-1 flex items-center gap-1.5">
+            <FileUp className="w-3.5 h-3.5" />
+            Or drag &amp; drop files / .zip anywhere on this panel
+          </p>
         </div>
       ) : (
+        /* ── Monaco editor ── */
         <div className="flex-1 overflow-hidden">
           <Editor
             height="100%"
