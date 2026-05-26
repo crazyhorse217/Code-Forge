@@ -1,10 +1,11 @@
-import { Hammer, AlertTriangle, ImageIcon, X } from 'lucide-react'
+import { Hammer, AlertTriangle, ImageIcon, X, Download, CheckCircle, RefreshCw, ExternalLink } from 'lucide-react'
 import type { BuildConfig, ToolStatus } from '../types'
 
 interface Props {
   config: BuildConfig
   onChange: (c: BuildConfig) => void
   onBuild: () => void
+  onRefreshTools: () => void
   isBuilding: boolean
   tools: ToolStatus | null
 }
@@ -17,12 +18,13 @@ const LANGUAGES = [
   { value: 'react-native', label: 'React Native' }
 ]
 
-export default function BuildConfigPanel({ config, onChange, onBuild, isBuilding, tools }: Props) {
+export default function BuildConfigPanel({ config, onChange, onBuild, onRefreshTools, isBuilding, tools }: Props) {
   const set = <K extends keyof BuildConfig>(key: K, value: BuildConfig[K]) =>
     onChange({ ...config, [key]: value })
 
   const needsAndroid = config.target === 'apk' || config.target === 'both'
-  const androidMissing = needsAndroid && tools && (!tools.java || !tools.androidSdk)
+  const androidReady = !!(tools?.java && tools?.androidSdk)
+  const androidMissing = needsAndroid && tools && !androidReady
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -90,17 +92,56 @@ export default function BuildConfigPanel({ config, onChange, onBuild, isBuilding
         </div>
       </div>
 
-      {/* Android warning */}
+      {/* Android setup card */}
       {androidMissing && (
-        <div className="flex gap-2 p-3 bg-amber-950/40 border border-amber-800/60 rounded-md text-xs text-amber-300">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold mb-1">Android SDK required</p>
-            <p className="text-amber-400/70">
-              Install Android Studio and JDK 17+, then set the{' '}
-              <code className="text-amber-300">ANDROID_HOME</code> env var and restart CodeForge.
-            </p>
+        <div className="flex flex-col gap-2 p-3 bg-amber-950/30 border border-amber-800/50 rounded-md text-xs">
+          <div className="flex items-center gap-2 text-amber-300 font-semibold">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            Android build tools required
           </div>
+
+          {/* Status rows */}
+          <div className="flex flex-col gap-1 pl-1">
+            <StatusRow ok={!!tools?.java}       label={tools?.java ? `Java — ${tools.java.split('\n')[0]}` : 'Java (JDK 17+) — not found'} />
+            <StatusRow ok={!!tools?.androidSdk} label={tools?.androidSdk ? `Android SDK — ${tools.androidSdk}` : 'Android SDK — not found'} />
+            <StatusRow ok={!!tools?.androidStudioPath} label={tools?.androidStudioPath ? `Android Studio — installed` : 'Android Studio — not installed'} />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-col gap-1.5 mt-1">
+            {!tools?.androidStudioPath && (
+              <button
+                onClick={() => window.api.openUrl('https://developer.android.com/studio')}
+                className="flex items-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-black font-semibold rounded transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download Android Studio
+                <ExternalLink className="w-3 h-3 ml-auto opacity-70" />
+              </button>
+            )}
+            {!tools?.java && (
+              <button
+                onClick={() => window.api.openUrl('https://adoptium.net/temurin/releases/?version=17')}
+                className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download JDK 17
+                <ExternalLink className="w-3 h-3 ml-auto opacity-70" />
+              </button>
+            )}
+            <button
+              onClick={onRefreshTools}
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Re-check tools after installing
+            </button>
+          </div>
+
+          <p className="text-amber-400/60 leading-relaxed">
+            After installing Android Studio, open it once to finish SDK setup, then click Re-check above.
+            CodeForge finds the SDK automatically — no env vars needed.
+          </p>
         </div>
       )}
 
@@ -176,6 +217,18 @@ function CapRow({ ok, label }: { ok: boolean; label: string }) {
     <div className={`flex items-center gap-2 ${ok ? 'text-slate-400' : 'text-slate-600'}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${ok ? 'bg-emerald-500' : 'bg-slate-600'}`} />
       {label}
+    </div>
+  )
+}
+
+function StatusRow({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div className={`flex items-center gap-1.5 ${ok ? 'text-emerald-400' : 'text-amber-400/70'}`}>
+      {ok
+        ? <CheckCircle className="w-3 h-3 flex-shrink-0" />
+        : <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+      }
+      <span className="truncate">{label}</span>
     </div>
   )
 }

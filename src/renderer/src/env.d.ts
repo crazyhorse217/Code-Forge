@@ -43,6 +43,7 @@ interface Window {
     onSignProgress(cb: (data: { file: string }) => void): () => void
     onSignComplete(cb: (result: { success: boolean; error?: string }) => void): () => void
     getFileSize(filePath: string): Promise<number | null>
+    openUrl(url: string): Promise<void>
     publishRelease(params: { token: string; owner: string; repo: string; tag: string; title: string; notes: string; prerelease: boolean; filePaths: string[] }): void
     onPublishProgress(cb: (step: string) => void): () => void
     onPublishComplete(cb: (result: { success: boolean; url?: string; error?: string }) => void): () => void

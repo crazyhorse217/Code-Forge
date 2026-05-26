@@ -55,9 +55,11 @@ export default function App() {
 
   const hasHtmlFiles = Object.keys(files).some((f) => f.endsWith('.html'))
 
-  useEffect(() => {
+  const refreshTools = useCallback(() => {
     window.api.checkTools().then((t) => setTools(t as ToolStatus))
   }, [])
+
+  useEffect(() => { refreshTools() }, [])
 
   // Subscribe to update events once on mount
   useEffect(() => updater.subscribe(), [])
@@ -393,6 +395,7 @@ export default function App() {
             config={config}
             onChange={setConfig}
             onBuild={handleBuild}
+            onRefreshTools={refreshTools}
             isBuilding={isBuilding}
             tools={tools}
           />

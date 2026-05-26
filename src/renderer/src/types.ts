@@ -34,6 +34,8 @@ export interface ToolStatus {
   python: string | false
   java: string | false
   androidSdk: string | false
+  androidStudioPath: string | false
+  adb: string | false
   pkg: string | false
   pyinstaller: string | false
 }

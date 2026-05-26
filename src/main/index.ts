@@ -163,6 +163,38 @@ ipcMain.handle('check-tools', async () => {
     }
   }
 
+  // Android SDK: prefer env vars, then scan common installation paths
+  let androidSdk: string | false =
+    process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || false
+
+  if (!androidSdk) {
+    const candidates = [
+      path.join(process.env.LOCALAPPDATA ?? '', 'Android', 'Sdk'),
+      path.join(process.env.USERPROFILE ?? '', 'AppData', 'Local', 'Android', 'Sdk'),
+      'C:\\Android\\Sdk',
+      path.join(process.env.USERPROFILE ?? '', 'Android', 'Sdk'),
+    ]
+    for (const p of candidates) {
+      try {
+        if (fs.existsSync(p) && fs.existsSync(path.join(p, 'platform-tools'))) {
+          androidSdk = p
+          break
+        }
+      } catch { /* skip */ }
+    }
+  }
+
+  // Android Studio installation path
+  let androidStudioPath: string | false = false
+  const studioCandidates = [
+    'C:\\Program Files\\Android\\Android Studio',
+    path.join(process.env.LOCALAPPDATA ?? '', 'Programs', 'Android Studio'),
+    path.join(process.env.ProgramFiles ?? '', 'Android', 'Android Studio'),
+  ]
+  for (const p of studioCandidates) {
+    try { if (fs.existsSync(p)) { androidStudioPath = p; break } } catch { /* skip */ }
+  }
+
   return {
     node: check('node --version'),
     python: check('python --version') || check('python3 --version'),
@@ -173,9 +205,18 @@ ipcMain.handle('check-tools', async () => {
         return false
       }
     })(),
-    androidSdk: process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || false,
+    androidSdk,
+    androidStudioPath,
+    adb: check('adb version'),
     pkg: check('pkg --version'),
     pyinstaller: check('pyinstaller --version')
+  }
+})
+
+// ── IPC: Open external URL in default browser ─────────────────────────────
+ipcMain.handle('open-url', async (_event, url: string) => {
+  if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
+    await shell.openExternal(url)
   }
 })
 

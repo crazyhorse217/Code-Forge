@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import Editor from '@monaco-editor/react'
-import { Plus, X, Upload, FileCode, Archive, Check, FolderOpen, FileUp } from 'lucide-react'
+import { Plus, X, Upload, FileCode, Archive, Check, FolderOpen, FileUp, Trash2 } from 'lucide-react'
 
 interface Props {
   files: Record<string, string>
@@ -26,6 +26,7 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
   const [naming, setNaming]         = useState(false)
   const [newName, setNewName]       = useState('')
   const [importing, setImporting]   = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const fileNames  = Object.keys(files)
@@ -52,6 +53,13 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
   }
 
   const cancelNaming = () => { setNaming(false); setNewName('') }
+
+  const clearAll = () => {
+    if (!confirmClear) { setConfirmClear(true); setTimeout(() => setConfirmClear(false), 3000); return }
+    onFilesChange({})
+    setActiveFile('')
+    setConfirmClear(false)
+  }
 
   const deleteFile = (name: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -209,6 +217,21 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
             >
               <Archive className="w-3.5 h-3.5" />
             </button>
+            {/* Clear all files */}
+            {fileNames.length > 0 && (
+              <button
+                onClick={clearAll}
+                title={confirmClear ? 'Click again to confirm clear all' : 'Clear all files'}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-all ml-1 ${
+                  confirmClear
+                    ? 'bg-red-600 text-white'
+                    : 'text-slate-500 hover:text-red-400'
+                }`}
+              >
+                <Trash2 className="w-3 h-3" />
+                {confirmClear && <span className="font-semibold">Confirm?</span>}
+              </button>
+            )}
           </div>
         )}
       </div>

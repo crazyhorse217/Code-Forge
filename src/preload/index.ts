@@ -156,6 +156,9 @@ contextBridge.exposeInMainWorld('api', {
   getFileSize: (filePath: string): Promise<number | null> =>
     ipcRenderer.invoke('get-file-size', filePath),
 
+  openUrl: (url: string): Promise<void> =>
+    ipcRenderer.invoke('open-url', url),
+
   // ── GitHub publisher ──────────────────────────────────────────────────────
   publishRelease: (params: {
     token: string; owner: string; repo: string; tag: string
