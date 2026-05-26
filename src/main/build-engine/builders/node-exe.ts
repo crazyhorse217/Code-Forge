@@ -31,13 +31,47 @@ export async function buildNodeExe(
   } else {
     try {
       const pkg = JSON.parse(files['package.json'])
-      entryPoint = pkg.main || pkg.bin || 'index.js'
+      let candidate: string = pkg.main || 'index.js'
       if (typeof pkg.bin === 'object') {
-        entryPoint = Object.values(pkg.bin)[0] as string
+        candidate = Object.values(pkg.bin)[0] as string
+      } else if (typeof pkg.bin === 'string') {
+        candidate = pkg.bin
       }
+      entryPoint = candidate
     } catch {
       // keep default
     }
+  }
+
+  // ── Validate entry point is a real file, not a framework module specifier ──
+  // Module specifiers like "expo-router/entry" or "expo/AppEntry" are package
+  // imports, not file paths. If the resolved entry doesn't exist on disk we
+  // fall back to common Node.js entry-point conventions.
+  const FRAMEWORK_SPECIFIERS = [
+    'expo-router/entry',
+    'expo/AppEntry',
+    'node_modules/expo/AppEntry',
+  ]
+  if (FRAMEWORK_SPECIFIERS.some((s) => entryPoint.includes(s))) {
+    throw new Error(
+      `This appears to be an Expo / React Native project (entry: "${entryPoint}").\n` +
+      `Expo projects cannot be built into a Windows EXE — they require the Android/iOS ` +
+      `build toolchain. Use the APK target instead, or select a plain Node.js project.`
+    )
+  }
+
+  const FALLBACKS = ['index.js', 'server.js', 'app.js', 'main.js', 'src/index.js']
+  if (!fs.existsSync(path.join(tmpDir, entryPoint))) {
+    onProgress('log', `Entry "${entryPoint}" not found on disk — searching for a fallback...`)
+    const found = FALLBACKS.find((f) => fs.existsSync(path.join(tmpDir, f)))
+    if (!found) {
+      throw new Error(
+        `Could not find a valid entry point. Tried: ${entryPoint}, ${FALLBACKS.join(', ')}.\n` +
+        `Make sure your project has an index.js (or set "main" in package.json to a real file).`
+      )
+    }
+    onProgress('log', `Using fallback entry point: ${found}`)
+    entryPoint = found
   }
 
   onProgress('log', `Entry point: ${entryPoint}`)

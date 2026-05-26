@@ -47,9 +47,16 @@ export async function buildProject(
         outputs.exe = await buildPythonExe(files, config, onProgress)
         break
       case 'nodejs':
-      case 'react-native':
         outputs.exe = await buildNodeExe(files, config, onProgress)
         break
+      case 'react-native':
+        throw new Error(
+          'React Native / Expo projects cannot be compiled to a Windows EXE.\n' +
+          'These projects require the Android or iOS build toolchain.\n' +
+          'Options:\n' +
+          '  • Use the APK target to build an Android app\n' +
+          '  • For a desktop app, rewrite your UI in plain HTML/JS or Node.js'
+        )
       default:
         throw new Error(`EXE build not supported for language: ${lang}`)
     }

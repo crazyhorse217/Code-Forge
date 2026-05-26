@@ -14,6 +14,7 @@ import IsoFlasher from './components/IsoFlasher'
 import SigningConfig from './components/SigningConfig'
 import GitHubPublisher from './components/GitHubPublisher'
 import ThemeSwitcher, { type Theme } from './components/ThemeSwitcher'
+import PreflightPanel from './components/PreflightPanel'
 import type { BuildConfig, LogEntry, BuildOutputPaths, ToolStatus, BuildHistoryEntry } from './types'
 
 type Tab = 'editor' | 'log' | 'history' | 'ai' | 'guide' | 'flash'
@@ -380,6 +381,14 @@ export default function App() {
 
         {/* Right sidebar */}
         <div className="w-[300px] flex-shrink-0 flex flex-col bg-slate-900 overflow-y-auto">
+
+          {/* Pre-flight code check — shown whenever files are loaded */}
+          {Object.keys(files).length > 0 && (
+            <div className="px-3 pt-3 pb-1">
+              <PreflightPanel files={files} buildTarget={config.target} />
+            </div>
+          )}
+
           <BuildConfigPanel
             config={config}
             onChange={setConfig}
