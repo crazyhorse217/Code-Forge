@@ -11,6 +11,8 @@ import TemplateModal from './components/TemplateModal'
 import TutorialPanel from './components/TutorialPanel'
 import WelcomeTour from './components/WelcomeTour'
 import IsoFlasher from './components/IsoFlasher'
+import SigningConfig from './components/SigningConfig'
+import GitHubPublisher from './components/GitHubPublisher'
 import ThemeSwitcher, { type Theme } from './components/ThemeSwitcher'
 import type { BuildConfig, LogEntry, BuildOutputPaths, ToolStatus, BuildHistoryEntry } from './types'
 
@@ -33,6 +35,8 @@ export default function App() {
     target: 'exe',
     language: 'auto'
   })
+
+  const [autoSign, setAutoSign] = useState(() => localStorage.getItem('cf-auto-sign') === '1')
 
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem('cf-theme') as Theme) ?? 'dark'
@@ -384,6 +388,15 @@ export default function App() {
             tools={tools}
           />
 
+          <SigningConfig
+            outputPaths={buildOutput}
+            autoSign={autoSign}
+            onAutoSignChange={(v) => {
+              setAutoSign(v)
+              localStorage.setItem('cf-auto-sign', v ? '1' : '0')
+            }}
+          />
+
           {buildOutput && (
             <div className="border-t border-slate-800">
               <div className="flex items-center gap-2 px-4 py-3">
@@ -392,6 +405,10 @@ export default function App() {
               </div>
               <DownloadPanel output={buildOutput} />
             </div>
+          )}
+
+          {buildOutput && (
+            <GitHubPublisher outputPaths={buildOutput} config={config} />
           )}
         </div>
       </div>

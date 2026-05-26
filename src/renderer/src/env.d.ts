@@ -34,5 +34,14 @@ interface Window {
     cancelFlash(): void
     onFlashProgress(cb: (p: { written: number; total: number; speed: number; eta: number }) => void): () => void
     onFlashComplete(cb: (result: { success: boolean; error?: string }) => void): () => void
+    findSigntool(): Promise<string | null>
+    pickCert(): Promise<string | null>
+    signExe(params: { filePaths: string[]; certPath: string; password: string; tsServer: string; signtoolPath: string }): void
+    onSignProgress(cb: (data: { file: string }) => void): () => void
+    onSignComplete(cb: (result: { success: boolean; error?: string }) => void): () => void
+    getFileSize(filePath: string): Promise<number | null>
+    publishRelease(params: { token: string; owner: string; repo: string; tag: string; title: string; notes: string; prerelease: boolean; filePaths: string[] }): void
+    onPublishProgress(cb: (step: string) => void): () => void
+    onPublishComplete(cb: (result: { success: boolean; url?: string; error?: string }) => void): () => void
   }
 }

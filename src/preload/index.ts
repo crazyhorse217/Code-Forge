@@ -118,5 +118,52 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_: Electron.IpcRendererEvent, result: { success: boolean; error?: string }): void => cb(result)
     ipcRenderer.on('flash-complete', handler)
     return () => ipcRenderer.removeListener('flash-complete', handler)
+  },
+
+  // ── Code signing ──────────────────────────────────────────────────────────
+  findSigntool: (): Promise<string | null> =>
+    ipcRenderer.invoke('find-signtool'),
+
+  pickCert: (): Promise<string | null> =>
+    ipcRenderer.invoke('pick-cert'),
+
+  signExe: (params: { filePaths: string[]; certPath: string; password: string; tsServer: string; signtoolPath: string }): void => {
+    ipcRenderer.send('sign-exe', params)
+  },
+
+  onSignProgress: (cb: (data: { file: string }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, data: { file: string }): void => cb(data)
+    ipcRenderer.on('sign-progress', handler)
+    return () => ipcRenderer.removeListener('sign-progress', handler)
+  },
+
+  onSignComplete: (cb: (result: { success: boolean; error?: string }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, result: { success: boolean; error?: string }): void => cb(result)
+    ipcRenderer.on('sign-complete', handler)
+    return () => ipcRenderer.removeListener('sign-complete', handler)
+  },
+
+  // ── File utilities ────────────────────────────────────────────────────────
+  getFileSize: (filePath: string): Promise<number | null> =>
+    ipcRenderer.invoke('get-file-size', filePath),
+
+  // ── GitHub publisher ──────────────────────────────────────────────────────
+  publishRelease: (params: {
+    token: string; owner: string; repo: string; tag: string
+    title: string; notes: string; prerelease: boolean; filePaths: string[]
+  }): void => {
+    ipcRenderer.send('publish-release', params)
+  },
+
+  onPublishProgress: (cb: (step: string) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, step: string): void => cb(step)
+    ipcRenderer.on('publish-progress', handler)
+    return () => ipcRenderer.removeListener('publish-progress', handler)
+  },
+
+  onPublishComplete: (cb: (result: { success: boolean; url?: string; error?: string }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, result: { success: boolean; url?: string; error?: string }): void => cb(result)
+    ipcRenderer.on('publish-complete', handler)
+    return () => ipcRenderer.removeListener('publish-complete', handler)
   }
 })

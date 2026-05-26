@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import path from 'path'
 import { is } from '@electron-toolkit/utils'
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import fs from 'fs'
 import Anthropic from '@anthropic-ai/sdk'
 import { autoUpdater } from 'electron-updater'
@@ -511,6 +511,193 @@ ipcMain.on('flash-iso', (event, { isoPath, drivePath }: { isoPath: string; drive
 
 ipcMain.on('cancel-flash', () => {
   flashCancelled = true
+})
+
+// ── IPC: Find signtool.exe ────────────────────────────────────────────────────
+ipcMain.handle('find-signtool', () => {
+  const bases = [
+    'C:\\Program Files (x86)\\Windows Kits\\10\\bin',
+    'C:\\Program Files\\Windows Kits\\10\\bin'
+  ]
+  for (const base of bases) {
+    if (!fs.existsSync(base)) continue
+    try {
+      const versions = fs.readdirSync(base)
+        .filter((d) => /^\d+\.\d+\./.test(d))
+        .sort()
+        .reverse()
+      for (const v of versions) {
+        const candidate = path.join(base, v, 'x64', 'signtool.exe')
+        if (fs.existsSync(candidate)) return candidate
+      }
+    } catch { /* skip */ }
+  }
+  return null
+})
+
+// ── IPC: Pick .pfx certificate file ──────────────────────────────────────────
+ipcMain.handle('pick-cert', async () => {
+  const { filePaths, canceled } = await dialog.showOpenDialog(mainWindow!, {
+    title: 'Select Code Signing Certificate',
+    filters: [{ name: 'PFX Certificate', extensions: ['pfx', 'p12'] }],
+    properties: ['openFile']
+  })
+  return canceled || filePaths.length === 0 ? null : filePaths[0]
+})
+
+// ── IPC: Sign EXE files with signtool ────────────────────────────────────────
+ipcMain.on('sign-exe', (event, {
+  filePaths, certPath, password, tsServer, signtoolPath
+}: {
+  filePaths: string[]
+  certPath: string
+  password: string
+  tsServer: string
+  signtoolPath: string
+}) => {
+  const sender = event.sender
+
+  const runSigntool = (filePath: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+      const proc = spawn(signtoolPath, [
+        'sign',
+        '/f', certPath,
+        '/p', password,
+        '/tr', tsServer,
+        '/td', 'sha256',
+        '/fd', 'sha256',
+        filePath
+      ], { windowsHide: true })
+
+      let stderr = ''
+      let stdout = ''
+      proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString() })
+      proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString() })
+      proc.on('close', (code) => {
+        if (code === 0) resolve()
+        else reject(new Error(stderr || stdout || `signtool exited with code ${code}`))
+      })
+      proc.on('error', reject)
+    })
+
+  ;(async () => {
+    try {
+      for (const filePath of filePaths) {
+        if (!filePath.endsWith('.exe')) continue
+        if (!sender.isDestroyed()) sender.send('sign-progress', { file: path.basename(filePath) })
+        await runSigntool(filePath)
+      }
+      if (!sender.isDestroyed()) sender.send('sign-complete', { success: true })
+    } catch (err: unknown) {
+      if (!sender.isDestroyed()) {
+        sender.send('sign-complete', {
+          success: false,
+          error: err instanceof Error ? err.message : String(err)
+        })
+      }
+    }
+  })()
+})
+
+// ── IPC: Get file size ────────────────────────────────────────────────────────
+ipcMain.handle('get-file-size', (_, filePath: string) => {
+  try {
+    return fs.statSync(filePath).size
+  } catch {
+    return null
+  }
+})
+
+// ── IPC: Publish GitHub release + upload assets ───────────────────────────────
+ipcMain.on('publish-release', (event, {
+  token, owner, repo, tag, title, notes, prerelease, filePaths
+}: {
+  token: string
+  owner: string
+  repo: string
+  tag: string
+  title: string
+  notes: string
+  prerelease: boolean
+  filePaths: string[]
+}) => {
+  const sender = event.sender
+
+  ;(async () => {
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'CodeForge/1.0.0',
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+
+    try {
+      // Step 1: Create the release
+      if (!sender.isDestroyed()) sender.send('publish-progress', 'Creating release on GitHub…')
+
+      const createRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ tag_name: tag, name: title, body: notes, prerelease, draft: false })
+      })
+
+      if (!createRes.ok) {
+        const body = await createRes.json() as { message?: string; errors?: Array<{ message?: string }> }
+        const msg = body.errors?.[0]?.message ?? body.message ?? `HTTP ${createRes.status}`
+        throw new Error(msg)
+      }
+
+      const release = await createRes.json() as { id: number; html_url: string }
+
+      // Step 2: Upload each asset
+      const validPaths = filePaths.filter((p) => p && fs.existsSync(p))
+
+      for (const filePath of validPaths) {
+        const filename = path.basename(filePath)
+        if (!sender.isDestroyed()) sender.send('publish-progress', `Uploading ${filename}…`)
+
+        const ext = path.extname(filename).slice(1).toLowerCase()
+        const contentType =
+          ext === 'exe' ? 'application/vnd.microsoft.portable-executable' :
+          ext === 'apk' ? 'application/vnd.android.package-archive' :
+          'application/octet-stream'
+
+        const fileBuffer = fs.readFileSync(filePath)
+        const uploadUrl = `https://uploads.github.com/repos/${owner}/${repo}/releases/${release.id}/assets?name=${encodeURIComponent(filename)}`
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': contentType,
+            'User-Agent': 'CodeForge/1.0.0',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          },
+          // @ts-ignore — Node 18+ fetch accepts Buffer as body
+          body: fileBuffer,
+          duplex: 'half'
+        } as RequestInit)
+
+        if (!uploadRes.ok) {
+          const body = await uploadRes.json() as { message?: string }
+          throw new Error(`Upload failed: ${body.message ?? `HTTP ${uploadRes.status}`}`)
+        }
+      }
+
+      if (!sender.isDestroyed()) {
+        sender.send('publish-complete', { success: true, url: release.html_url })
+      }
+    } catch (err: unknown) {
+      if (!sender.isDestroyed()) {
+        sender.send('publish-complete', {
+          success: false,
+          error: err instanceof Error ? err.message : String(err)
+        })
+      }
+    }
+  })()
 })
 
 // ── IPC: Preview web app in sandboxed window ──────────────────────────────────
