@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save } from 'lucide-react'
+import { Cpu, Code2, Terminal, Download, Clock, FolderOpen, Save, Sparkles } from 'lucide-react'
 import CodeEditor from './components/CodeEditor'
 import BuildConfigPanel from './components/BuildConfig'
 import BuildProgress from './components/BuildProgress'
 import DownloadPanel from './components/DownloadPanel'
 import BuildHistory from './components/BuildHistory'
+import AIAssistant from './components/AIAssistant'
 import ThemeSwitcher, { type Theme } from './components/ThemeSwitcher'
 import type { BuildConfig, LogEntry, BuildOutputPaths, ToolStatus, BuildHistoryEntry } from './types'
 
-type Tab = 'editor' | 'log' | 'history'
+type Tab = 'editor' | 'log' | 'history' | 'ai'
 
 let logIdCounter = 0
 let historyIdCounter = 0
@@ -252,6 +253,12 @@ export default function App() {
               label="History"
               badge={history.length > 0 ? String(history.length) : undefined}
             />
+            <TabButton
+              active={activeTab === 'ai'}
+              onClick={() => setActiveTab('ai')}
+              icon={<Sparkles className="w-3.5 h-3.5" />}
+              label="AI"
+            />
           </div>
 
           {/* Pane content */}
@@ -268,6 +275,13 @@ export default function App() {
             )}
             {activeTab === 'history' && (
               <BuildHistory history={history} onClear={() => setHistory([])} />
+            )}
+            {activeTab === 'ai' && (
+              <AIAssistant
+                files={files}
+                logs={logs}
+                onApplyConfig={(partial) => setConfig((prev) => ({ ...prev, ...partial }))}
+              />
             )}
           </div>
         </div>

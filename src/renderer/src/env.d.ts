@@ -20,5 +20,9 @@ interface Window {
     pickIcon(): Promise<string | null>
     saveProject(data: object): Promise<boolean>
     loadProject(): Promise<Record<string, unknown> | null>
+    aiAnalyze(params: { files: Record<string, string>; errorLog?: string; apiKey: string }): void
+    onAiChunk(cb: (text: string) => void): () => void
+    onAiDone(cb: () => void): () => void
+    onAiError(cb: (error: string) => void): () => void
   }
 }

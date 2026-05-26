@@ -3,6 +3,7 @@ import path from 'path'
 import { is } from '@electron-toolkit/utils'
 import { execSync } from 'child_process'
 import fs from 'fs'
+import Anthropic from '@anthropic-ai/sdk'
 import { buildProject } from './build-engine/index'
 
 let mainWindow: BrowserWindow | null = null
@@ -201,4 +202,69 @@ ipcMain.handle('load-project', async () => {
   } catch {
     return null
   }
+})
+
+// ── IPC: AI code analysis (streaming) ────────────────────────────────────────
+ipcMain.on('ai-analyze', (event, { files, errorLog, apiKey }: {
+  files: Record<string, string>
+  errorLog?: string
+  apiKey: string
+}) => {
+  const sender = event.sender
+
+  const client = new Anthropic({ apiKey })
+
+  const fileContents = Object.entries(files)
+    .slice(0, 10)
+    .map(([name, content]) => `### ${name}\n\`\`\`\n${content.slice(0, 3000)}\n\`\`\``)
+    .join('\n\n')
+
+  const analyzePrompt = `You are an expert developer assistant inside CodeForge, a desktop app that compiles source code into EXE/APK files.
+
+Analyze the following project files and provide:
+1. A brief description of what the project does
+2. Any code issues that might prevent a successful build
+3. Specific build recommendations
+
+Then end your response with a JSON config block like this:
+\`\`\`json
+{"appName": "MyApp", "language": "html", "version": "1.0.0"}
+\`\`\`
+Valid language values: auto, html, python, nodejs, react-native
+
+## Project Files:
+${fileContents}`
+
+  const fixPrompt = `You are an expert developer assistant inside CodeForge, a desktop app that compiles source code into EXE/APK files.
+
+The user's build failed. Analyze the code and error and provide:
+1. A clear explanation of what went wrong
+2. The exact code changes needed to fix it
+3. Any other issues to watch for
+
+## Project Files:
+${fileContents}
+
+## Build Error:
+${errorLog}`
+
+  ;(async () => {
+    try {
+      const stream = client.messages.stream({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: errorLog ? fixPrompt : analyzePrompt }]
+      })
+
+      stream.on('text', (text) => {
+        if (!sender.isDestroyed()) sender.send('ai-chunk', text)
+      })
+
+      await stream.finalMessage()
+      if (!sender.isDestroyed()) sender.send('ai-done')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (!sender.isDestroyed()) sender.send('ai-error', message)
+    }
+  })()
 })

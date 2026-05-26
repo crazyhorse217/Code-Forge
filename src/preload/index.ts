@@ -48,5 +48,27 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('save-project', data),
 
   loadProject: (): Promise<Record<string, unknown> | null> =>
-    ipcRenderer.invoke('load-project')
+    ipcRenderer.invoke('load-project'),
+
+  aiAnalyze: (params: { files: Record<string, string>; errorLog?: string; apiKey: string }): void => {
+    ipcRenderer.send('ai-analyze', params)
+  },
+
+  onAiChunk: (cb: (text: string) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, text: string): void => cb(text)
+    ipcRenderer.on('ai-chunk', handler)
+    return () => ipcRenderer.removeListener('ai-chunk', handler)
+  },
+
+  onAiDone: (cb: () => void): (() => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('ai-done', handler)
+    return () => ipcRenderer.removeListener('ai-done', handler)
+  },
+
+  onAiError: (cb: (error: string) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, error: string): void => cb(error)
+    ipcRenderer.on('ai-error', handler)
+    return () => ipcRenderer.removeListener('ai-error', handler)
+  }
 })
