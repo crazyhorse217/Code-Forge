@@ -159,6 +159,9 @@ contextBridge.exposeInMainWorld('api', {
   openUrl: (url: string): Promise<void> =>
     ipcRenderer.invoke('open-url', url),
 
+  exportZip: (files: Record<string, string>): Promise<string | null> =>
+    ipcRenderer.invoke('export-zip', files),
+
   // ── GitHub publisher ──────────────────────────────────────────────────────
   publishRelease: (params: {
     token: string; owner: string; repo: string; tag: string

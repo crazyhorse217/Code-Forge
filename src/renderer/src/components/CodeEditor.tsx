@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import Editor from '@monaco-editor/react'
-import { Plus, X, Upload, FileCode, Archive, Check, FolderOpen, FileUp, Trash2 } from 'lucide-react'
+import { Plus, X, Upload, FileCode, Archive, Check, FolderOpen, FileUp, Trash2, PackageOpen } from 'lucide-react'
 
 interface Props {
   files: Record<string, string>
@@ -27,6 +27,8 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
   const [newName, setNewName]       = useState('')
   const [importing, setImporting]   = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [exporting, setExporting]   = useState(false)
+  const [exportDone, setExportDone] = useState(false)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const fileNames  = Object.keys(files)
@@ -68,6 +70,17 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
     onFilesChange(next)
     if (activeFile === name) setActiveFile(Object.keys(next)[0] ?? '')
   }
+
+  const exportZip = useCallback(async () => {
+    if (Object.keys(files).length === 0 || exporting) return
+    setExporting(true)
+    try {
+      const savedPath = await window.api.exportZip(files)
+      if (savedPath) { setExportDone(true); setTimeout(() => setExportDone(false), 2500) }
+    } finally {
+      setExporting(false)
+    }
+  }, [files, exporting])
 
   // ── Native file-dialog imports (reliable in packaged app) ─────────────────
   const handleImportZip = useCallback(async () => {
@@ -217,6 +230,20 @@ export default function CodeEditor({ files, onFilesChange, monacoTheme = 'vs-dar
             >
               <Archive className="w-3.5 h-3.5" />
             </button>
+            {/* Export as ZIP */}
+            {fileNames.length > 0 && (
+              <button
+                onClick={exportZip}
+                disabled={exporting}
+                title="Export project as ZIP"
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-slate-500 hover:text-violet-400 transition-colors disabled:opacity-40 ml-0.5"
+              >
+                {exportDone
+                  ? <><Check className="w-3 h-3 text-emerald-400" /> <span className="text-emerald-400">Saved!</span></>
+                  : <PackageOpen className="w-3 h-3" />
+                }
+              </button>
+            )}
             {/* Clear all files */}
             {fileNames.length > 0 && (
               <button

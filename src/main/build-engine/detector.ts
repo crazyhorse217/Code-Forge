@@ -1,4 +1,4 @@
-export type Language = 'html' | 'python' | 'nodejs' | 'react-native' | 'unknown'
+export type Language = 'html' | 'python' | 'nodejs' | 'react' | 'react-native' | 'unknown'
 
 // Entry points that are framework specifiers, not real files
 const FRAMEWORK_MAINS = [
@@ -29,6 +29,16 @@ export function detectLanguage(files: Record<string, string>): Language {
         names.includes('app.config.ts')
       ) {
         return 'react-native'
+      }
+
+      // React + Vite / CRA web project (has react dep + a bundler, no react-native)
+      if (
+        deps['react'] && deps['react-dom'] &&
+        (deps['vite'] || deps['@vitejs/plugin-react'] || deps['@vitejs/plugin-react-swc'] ||
+         deps['react-scripts'] || deps['@craco/craco'] ||
+         names.includes('vite.config.ts') || names.includes('vite.config.js'))
+      ) {
+        return 'react'
       }
     } catch { /* malformed package.json — fall through */ }
   }

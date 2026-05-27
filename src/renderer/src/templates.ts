@@ -3,7 +3,7 @@ export interface Template {
   name: string
   description: string
   emoji: string
-  language: 'html' | 'python' | 'nodejs'
+  language: 'html' | 'python' | 'nodejs' | 'react'
   files: Record<string, string>
 }
 
@@ -699,7 +699,444 @@ if __name__ == "__main__":
     }
   },
 
-  // ── 6. Node.js REST API ──────────────────────────────────────────────────────
+  // ── 6. React CDN App ─────────────────────────────────────────────────────────
+  {
+    id: 'react-cdn',
+    name: 'React App (CDN)',
+    description: 'React 18 app using CDN + Babel — no build step. Builds directly to EXE or APK.',
+    emoji: '⚛️',
+    language: 'react',
+    files: {
+      'index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>React App</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- React 18 + Babel Standalone (CDN — requires internet on first run) -->
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="App.jsx"></script>
+</body>
+</html>`,
+
+      'App.jsx': `// ── React App — CDN edition ─────────────────────────────────────────────────
+const { useState, useEffect } = React
+
+// ── Counter component ─────────────────────────────────────────────────────────
+function Counter() {
+  const [count, setCount] = useState(0)
+  const [record, setRecord] = useState(0)
+
+  useEffect(() => {
+    if (count > record) setRecord(count)
+  }, [count])
+
+  return (
+    <div className="card">
+      <h2>Counter</h2>
+      <div className="big-number">{count}</div>
+      <p className="muted">Record: {record}</p>
+      <div className="btn-row">
+        <button onClick={() => setCount(c => c - 1)} className="btn-outline">−</button>
+        <button onClick={() => setCount(0)} className="btn-ghost">Reset</button>
+        <button onClick={() => setCount(c => c + 1)} className="btn-primary">+</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Todo component ────────────────────────────────────────────────────────────
+function TodoList() {
+  const [todos, setTodos] = useState([
+    { id: 1, text: 'Build something awesome', done: true },
+    { id: 2, text: 'Ship it with CodeForge', done: false },
+  ])
+  const [input, setInput] = useState('')
+
+  const add = () => {
+    const text = input.trim()
+    if (!text) return
+    setTodos(t => [...t, { id: Date.now(), text, done: false }])
+    setInput('')
+  }
+
+  const toggle = (id) => setTodos(t => t.map(x => x.id === id ? { ...x, done: !x.done } : x))
+  const remove = (id) => setTodos(t => t.filter(x => x.id !== id))
+
+  return (
+    <div className="card">
+      <h2>Todo List</h2>
+      <div className="input-row">
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && add()}
+          placeholder="Add a task…"
+          className="input"
+        />
+        <button onClick={add} className="btn-primary">Add</button>
+      </div>
+      <ul className="todo-list">
+        {todos.map(t => (
+          <li key={t.id} className={"todo-item" + (t.done ? " done" : "")}>
+            <input type="checkbox" checked={t.done} onChange={() => toggle(t.id)} />
+            <span>{t.text}</span>
+            <button onClick={() => remove(t.id)} className="btn-del">✕</button>
+          </li>
+        ))}
+      </ul>
+      <p className="muted">{todos.filter(t => t.done).length}/{todos.length} done</p>
+    </div>
+  )
+}
+
+// ── App root ──────────────────────────────────────────────────────────────────
+function App() {
+  return (
+    <div className="app">
+      <header className="header">
+        <span className="logo">⚛️ React App</span>
+        <span className="badge">Built with CodeForge</span>
+      </header>
+      <main className="main">
+        <Counter />
+        <TodoList />
+      </main>
+    </div>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />)`,
+
+      'styles.css': `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0f172a;
+  --surface: #1e293b;
+  --border:  #334155;
+  --accent:  #7c3aed;
+  --accent2: #a78bfa;
+  --fg:      #e2e8f0;
+  --muted:   #64748b;
+}
+
+body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; }
+
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .875rem 2rem; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.logo  { font-size: 1.1rem; font-weight: 800; color: var(--accent2); }
+.badge {
+  font-size: .75rem; padding: .25rem .75rem;
+  background: rgba(124,58,237,.2); border: 1px solid rgba(124,58,237,.4);
+  color: var(--accent2); border-radius: 999px;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%;
+}
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.5rem;
+}
+.card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--accent2); }
+
+.big-number { font-size: 4rem; font-weight: 900; color: var(--accent); text-align: center; margin: .5rem 0; }
+.muted { font-size: .8rem; color: var(--muted); text-align: center; margin-top: .5rem; }
+
+.btn-row { display: flex; gap: .75rem; justify-content: center; margin-top: 1rem; }
+
+button {
+  cursor: pointer; border: none; border-radius: 8px;
+  padding: .6rem 1.25rem; font-size: .9rem; font-weight: 600;
+  transition: background .15s, opacity .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #6d28d9; }
+.btn-outline { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent2); }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--fg); }
+.btn-del { background: transparent; color: var(--muted); padding: .25rem .5rem; font-size: .8rem; }
+.btn-del:hover { color: #f87171; }
+
+.input-row { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.input {
+  flex: 1; padding: .6rem .875rem; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--fg); font-size: .9rem;
+}
+.input:focus { outline: none; border-color: var(--accent); }
+
+.todo-list { list-style: none; display: flex; flex-direction: column; gap: .5rem; }
+.todo-item {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .6rem; background: var(--bg); border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.todo-item input[type=checkbox] { accent-color: var(--accent); width: 1rem; height: 1rem; cursor: pointer; }
+.todo-item span { flex: 1; font-size: .9rem; }
+.todo-item.done span { text-decoration: line-through; color: var(--muted); }`
+    }
+  },
+
+  // ── 7. React + Vite Starter ──────────────────────────────────────────────────
+  {
+    id: 'react-vite',
+    name: 'React + Vite (TypeScript)',
+    description: 'Full React 18 + Vite + TypeScript starter. CodeForge runs npm build then packages to EXE.',
+    emoji: '🔷',
+    language: 'react',
+    files: {
+      'index.html': `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My React App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>`,
+
+      'package.json': `{
+  "name": "my-react-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.0"
+  }
+}`,
+
+      'vite.config.ts': `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  base: './',  // Required for Electron file:// loading
+  build: {
+    outDir: 'dist',
+  },
+})`,
+
+      'tsconfig.json': `{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true
+  },
+  "include": ["src"]
+}`,
+
+      'src/main.tsx': `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './App.css'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+)`,
+
+      'src/App.tsx': `import { useState } from 'react'
+import Counter from './components/Counter'
+import TodoList from './components/TodoList'
+
+export default function App() {
+  return (
+    <div className="app">
+      <header className="header">
+        <span className="logo">🔷 My React App</span>
+        <span className="badge">Vite + TypeScript</span>
+      </header>
+      <main className="main">
+        <Counter />
+        <TodoList />
+      </main>
+    </div>
+  )
+}`,
+
+      'src/App.css': `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0f172a;
+  --surface: #1e293b;
+  --border:  #334155;
+  --accent:  #7c3aed;
+  --accent2: #a78bfa;
+  --fg:      #e2e8f0;
+  --muted:   #64748b;
+}
+
+body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; }
+
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .875rem 2rem; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.logo  { font-size: 1.1rem; font-weight: 800; color: var(--accent2); }
+.badge {
+  font-size: .75rem; padding: .25rem .75rem;
+  background: rgba(124,58,237,.2); border: 1px solid rgba(124,58,237,.4);
+  color: var(--accent2); border-radius: 999px;
+}
+.main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%;
+}
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.5rem;
+}
+.card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--accent2); }
+.big-number { font-size: 4rem; font-weight: 900; color: var(--accent); text-align: center; margin: .5rem 0; }
+.muted { font-size: .8rem; color: var(--muted); text-align: center; margin-top: .5rem; }
+.btn-row { display: flex; gap: .75rem; justify-content: center; margin-top: 1rem; }
+button {
+  cursor: pointer; border: none; border-radius: 8px;
+  padding: .6rem 1.25rem; font-size: .9rem; font-weight: 600; transition: background .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #6d28d9; }
+.btn-outline { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--accent); }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--fg); }
+.btn-del { background: transparent; color: var(--muted); padding: .25rem .5rem; font-size: .8rem; }
+.btn-del:hover { color: #f87171; }
+.input-row { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.input {
+  flex: 1; padding: .6rem .875rem; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font-size: .9rem;
+}
+.input:focus { outline: none; border-color: var(--accent); }
+.todo-list { list-style: none; display: flex; flex-direction: column; gap: .5rem; }
+.todo-item {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .6rem; background: var(--bg); border-radius: 8px; border: 1px solid var(--border);
+}
+.todo-item input[type=checkbox] { accent-color: var(--accent); width: 1rem; height: 1rem; cursor: pointer; }
+.todo-item span { flex: 1; font-size: .9rem; }
+.todo-item.done span { text-decoration: line-through; color: var(--muted); }`,
+
+      'src/components/Counter.tsx': `import { useState, useEffect } from 'react'
+
+export default function Counter() {
+  const [count, setCount] = useState(0)
+  const [record, setRecord] = useState(0)
+
+  useEffect(() => {
+    if (count > record) setRecord(count)
+  }, [count, record])
+
+  return (
+    <div className="card">
+      <h2>Counter</h2>
+      <div className="big-number">{count}</div>
+      <p className="muted">Record: {record}</p>
+      <div className="btn-row">
+        <button className="btn-outline" onClick={() => setCount(c => c - 1)}>−</button>
+        <button className="btn-ghost"   onClick={() => setCount(0)}>Reset</button>
+        <button className="btn-primary" onClick={() => setCount(c => c + 1)}>+</button>
+      </div>
+    </div>
+  )
+}`,
+
+      'src/components/TodoList.tsx': `import { useState } from 'react'
+
+interface Todo { id: number; text: string; done: boolean }
+
+export default function TodoList() {
+  const [todos, setTodos] = useState<Todo[]>([
+    { id: 1, text: 'Build something awesome', done: true },
+    { id: 2, text: 'Ship it with CodeForge', done: false },
+  ])
+  const [input, setInput] = useState('')
+
+  const add = () => {
+    const text = input.trim()
+    if (!text) return
+    setTodos(t => [...t, { id: Date.now(), text, done: false }])
+    setInput('')
+  }
+
+  const toggle = (id: number) => setTodos(t => t.map(x => x.id === id ? { ...x, done: !x.done } : x))
+  const remove = (id: number) => setTodos(t => t.filter(x => x.id !== id))
+
+  return (
+    <div className="card">
+      <h2>Todo List</h2>
+      <div className="input-row">
+        <input
+          className="input"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && add()}
+          placeholder="Add a task…"
+        />
+        <button className="btn-primary" onClick={add}>Add</button>
+      </div>
+      <ul className="todo-list">
+        {todos.map(t => (
+          <li key={t.id} className={\`todo-item\${t.done ? ' done' : ''}\`}>
+            <input type="checkbox" checked={t.done} onChange={() => toggle(t.id)} />
+            <span>{t.text}</span>
+            <button className="btn-del" onClick={() => remove(t.id)}>✕</button>
+          </li>
+        ))}
+      </ul>
+      <p className="muted">{todos.filter(t => t.done).length}/{todos.length} done</p>
+    </div>
+  )
+}`
+    }
+  },
+
+  // ── 8. Node.js REST API ──────────────────────────────────────────────────────
   {
     id: 'nodejs-api',
     name: 'Node.js REST API',

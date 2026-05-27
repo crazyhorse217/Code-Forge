@@ -3,6 +3,7 @@ import { buildWebExe } from './builders/web-exe'
 import { buildWebApk } from './builders/web-apk'
 import { buildPythonExe } from './builders/python-exe'
 import { buildNodeExe } from './builders/node-exe'
+import { buildReactViteExe } from './builders/react-vite'
 
 export interface BuildConfig {
   appName: string
@@ -46,6 +47,9 @@ export async function buildProject(
       case 'python':
         outputs.exe = await buildPythonExe(files, config, onProgress)
         break
+      case 'react':
+        outputs.exe = await buildReactViteExe(files, config, onProgress)
+        break
       case 'nodejs':
         outputs.exe = await buildNodeExe(files, config, onProgress)
         break
@@ -67,6 +71,7 @@ export async function buildProject(
     onProgress('step', '— Starting Android APK build —')
     switch (lang) {
       case 'html':
+      case 'react':
       case 'react-native':
         outputs.apk = await buildWebApk(files, config, onProgress)
         break

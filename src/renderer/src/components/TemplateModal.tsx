@@ -5,13 +5,15 @@ import { TEMPLATES, type Template } from '../templates'
 const LANG_BADGE: Record<Template['language'], string> = {
   html:   'bg-orange-900/50 text-orange-300 border-orange-700/40',
   python: 'bg-blue-900/50   text-blue-300   border-blue-700/40',
-  nodejs: 'bg-green-900/50  text-green-300  border-green-700/40'
+  nodejs: 'bg-green-900/50  text-green-300  border-green-700/40',
+  react:  'bg-cyan-900/50   text-cyan-300   border-cyan-700/40',
 }
 
 const LANG_LABEL: Record<Template['language'], string> = {
   html:   'HTML / JS',
   python: 'Python',
-  nodejs: 'Node.js'
+  nodejs: 'Node.js',
+  react:  'React',
 }
 
 interface Props {

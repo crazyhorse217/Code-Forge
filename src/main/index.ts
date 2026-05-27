@@ -3,6 +3,7 @@ import path from 'path'
 import { is } from '@electron-toolkit/utils'
 import { execSync, spawn } from 'child_process'
 import fs from 'fs'
+import AdmZip from 'adm-zip'
 import Anthropic from '@anthropic-ai/sdk'
 import { autoUpdater } from 'electron-updater'
 import { buildProject } from './build-engine/index'
@@ -683,6 +684,25 @@ ipcMain.on('sign-exe', (event, {
       }
     }
   })()
+})
+
+// ── IPC: Export project files as ZIP ─────────────────────────────────────────
+ipcMain.handle('export-zip', async (_, files: Record<string, string>) => {
+  if (!mainWindow) return null
+
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export project as ZIP',
+    defaultPath: 'my-project.zip',
+    filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
+  })
+  if (!filePath) return null
+
+  const zip = new AdmZip()
+  for (const [name, content] of Object.entries(files)) {
+    zip.addFile(name, Buffer.from(content, 'utf8'))
+  }
+  zip.writeZip(filePath)
+  return filePath
 })
 
 // ── IPC: Get file size ────────────────────────────────────────────────────────
